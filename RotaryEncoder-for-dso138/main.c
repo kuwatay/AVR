@@ -7,9 +7,10 @@
 //
 
 #include <avr/io.h>
+#include <util/delay.h>
 
-#define PULSE_WIDTH 20
-
+#define PULSE_WIDTH_US 120
+#define SAMPLING_INTERVAL_US 6
 #define ENC_A PB0
 #define ENC_B PB1
 #define OUT1 PB2
@@ -18,7 +19,6 @@
 int main()
 {
   uint8_t dataRead = 0;
-  volatile uint16_t i;
 
   // initialize hardware
   CCP = 0xD8;		// write signature for change enable of protected I/O register
@@ -31,22 +31,22 @@ int main()
   PUEB  = (1 << ENC_A) | ( 1 << ENC_B);	// ENC_A, ENC_B = PULL-UP
 
   while(1) {
-    dataRead = (dataRead << 2) + (PINB & 0b00000011);  // calculate index
+    dataRead = ((dataRead << 2) + (PINB & 0x03)) & 0x0f;  // calculate index
 
-    if (dataRead == 1) {
+    if (dataRead == 0x7) {	// 1 -> 3
       DDRB = (1 << OUT1);	// OUT1 = OUTPUT
       PORTB = ~(1 << OUT1);	// OUT1 = LOW
-      for (i = 0 ; i < PULSE_WIDTH ; i++)
-	; 			// wait a while
+      _delay_us(PULSE_WIDTH_US);
       DDRB = 0;			// OUT1, OUT2 = input
       PORTB = (1 << OUT1) | (1 << OUT2);	// OUT1, OUT2 = HIGH
-    } else if (dataRead == 2) {
+    } else if (dataRead == 0xd) { // 3 -> 1
       DDRB = (1 << OUT2);	// OUT2 = output
       PORTB = ~(1 << OUT2);	// OUT2 = LOW
-      for (i = 0 ; i < PULSE_WIDTH ; i++)
-	; 			// wait a while
+      _delay_us(PULSE_WIDTH_US);
       DDRB = 0;			// OUT1, OUT2 = input
       PORTB = (1 << OUT1) | (1 << OUT2);	// OUT1, OUT2 = HIGH
+    } else {
+      _delay_us(SAMPLING_INTERVAL_US);
     }
   }
 }
