@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <avr/io.h>
 #include <util/delay.h>
+#include <avr/sleep.h>
 
 #include "tiny10softI2C.h"
 #include "tiny10softI2C_si5351.h"
@@ -55,6 +56,7 @@ int main(void) {
 
   ENABLE_OUTPUT();  // Enable all outputs
 
-  while(1)
-    ;
+  while(1) {
+    sleep_cpu();
+  }
 }
